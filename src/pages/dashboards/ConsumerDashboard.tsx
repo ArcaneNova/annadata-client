@@ -16,7 +16,7 @@ const ConsumerDashboard = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { getTotalCartValue, getTotalCartItems } = useConsumerCart();
+  const { getTotal, getTotalItems } = useConsumerCart();
 
   useEffect(() => {
     fetchOrders();
@@ -87,7 +87,7 @@ const ConsumerDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {getActiveOrders().filter(order => order.status === 'shipped').length}
+                {getActiveOrders().filter(order => order.status === 'in-transit').length}
               </div>
               <p className="text-sm text-muted-foreground">Orders out for delivery</p>
             </CardContent>
@@ -142,14 +142,14 @@ const ConsumerDashboard = () => {
                       <div className="flex items-center gap-4">
                         <div className={`p-2 rounded-full ${
                           order.status === 'delivered' ? 'bg-green-100' :
-                          order.status === 'shipped' ? 'bg-blue-100' :
-                          order.status === 'processing' ? 'bg-yellow-100' :
+                          order.status === 'in-transit' ? 'bg-blue-100' :
+                          order.status === 'accepted' ? 'bg-yellow-100' :
                           'bg-gray-100'
                         }`}>
                           <Truck className={`h-5 w-5 ${
                             order.status === 'delivered' ? 'text-green-600' :
-                            order.status === 'shipped' ? 'text-blue-600' :
-                            order.status === 'processing' ? 'text-yellow-600' :
+                            order.status === 'in-transit' ? 'text-blue-600' :
+                            order.status === 'accepted' ? 'text-yellow-600' :
                             'text-gray-600'
                           }`} />
                         </div>
@@ -166,8 +166,8 @@ const ConsumerDashboard = () => {
                       <div className="flex items-center gap-4">
                         <span className={`px-3 py-1 rounded-full text-sm ${
                           order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                          order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
-                          order.status === 'processing' ? 'bg-yellow-100 text-yellow-700' :
+                          order.status === 'in-transit' ? 'bg-blue-100 text-blue-700' :
+                          order.status === 'accepted' ? 'bg-yellow-100 text-yellow-700' :
                           order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
                           'bg-gray-100 text-gray-700'
                         }`}>

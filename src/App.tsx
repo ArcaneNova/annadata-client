@@ -29,9 +29,10 @@ const Login = lazy(() => import("./pages/auth/Login"));
 const Register = lazy(() => import("./pages/auth/Register"));
 const FeaturedProducts = lazy(() => import("./components/featured/FeaturedProducts"));
 const VendorGrid = lazy(() => import("./components/featured/VendorGrid"));
+const VendorExport = lazy(() => import("./pages/vendor/VendorExport"));
+const FarmerMarketplace = lazy(() => import("./pages/vendor/FarmerMarketplace"));
 const VendorOrders = lazy(() => import("./pages/vendor/VendorOrders"));
 const VendorInventoryAlerts = lazy(() => import("./pages/vendor/VendorInventoryAlerts"));
-const VendorExport = lazy(() => import("./pages/vendor/VendorExport"));
 
 // Add a loading spinner component
 const LoadingSpinner = () => (
@@ -70,16 +71,32 @@ const AppLayout = () => {
             <Route path="/featured" element={<FeaturedProducts />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/dashboard/farmer" element={<FarmerDashboard />} />
+            <Route path="/dashboard/farmer" element={
+              <ProtectedRoute allowedRoles={["farmer"]}>
+                <FarmerDashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/vendor" element={
               <ProtectedRoute allowedRoles={["vendor"]}>
                 <VendorDashboard />
               </ProtectedRoute>
             } />
-            <Route path="/dashboard/consumer" element={<ConsumerDashboard />} />
+            <Route path="/dashboard/consumer" element={
+              <ProtectedRoute allowedRoles={["consumer"]}>
+                <ConsumerDashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/analytics" element={<MarketAnalytics />} />
-            <Route path="/agriculture/crop-health" element={<CropHealthDashboard />} />
-            <Route path="/farmer/products" element={<ManageProducts />} />
+            <Route path="/agriculture/crop-health" element={
+              <ProtectedRoute allowedRoles={["farmer"]}>
+                <CropHealthDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/farmer/products" element={
+              <ProtectedRoute allowedRoles={["farmer"]}>
+                <ManageProducts />
+              </ProtectedRoute>
+            } />
             <Route path="/vendor/products" element={
               <ProtectedRoute allowedRoles={["vendor"]}>
                 <VendorProducts />
@@ -90,7 +107,11 @@ const AppLayout = () => {
                 <ManageProducts />
               </ProtectedRoute>
             } />
-            <Route path="/vendor/marketplace" element={<Marketplace />} />
+            <Route path="/vendor/marketplace" element={
+              <ProtectedRoute allowedRoles={["vendor"]}>
+                <FarmerMarketplace />
+              </ProtectedRoute>
+            } />
             <Route path="/vendor/dashboard" element={
               <ProtectedRoute allowedRoles={["vendor"]}>
                 <VendorDashboard />
@@ -99,6 +120,11 @@ const AppLayout = () => {
             <Route path="/vendor/analytics" element={
               <ProtectedRoute allowedRoles={["vendor"]}>
                 <VendorAnalytics />
+              </ProtectedRoute>
+            } />
+            <Route path="/vendor/export" element={
+              <ProtectedRoute allowedRoles={["vendor"]}>
+                <VendorExport />
               </ProtectedRoute>
             } />
             <Route path="/vendor/orders" element={
@@ -111,13 +137,12 @@ const AppLayout = () => {
                 <VendorInventoryAlerts />
               </ProtectedRoute>
             } />
-            <Route path="/vendor/export" element={
-              <ProtectedRoute allowedRoles={["vendor"]}>
-                <VendorExport />
+            <Route path="/consumer/nearby-vendors" element={<NearbyVendors />} />
+            <Route path="/checkout" element={
+              <ProtectedRoute allowedRoles={["consumer"]}>
+                <Checkout />
               </ProtectedRoute>
             } />
-            <Route path="/consumer/nearby-vendors" element={<NearbyVendors />} />
-            <Route path="/checkout" element={<Checkout />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

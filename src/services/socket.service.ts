@@ -332,6 +332,10 @@ class SocketService {
     this.initialized = false;
   }
 
+  isConnected(): boolean {
+    return !!this.socket?.connected;
+  }
+
   startVendorLocationBroadcast() {
     if (!this.socket?.connected) {
       this.connect();

@@ -20,10 +20,30 @@ const ManageProducts = () => {
 
   const fetchProducts = async () => {
     try {
-      const fetchedProducts = await productService.getProducts();
+      setIsLoading(true);
+      let fetchedProducts;
+      
+      // Use the appropriate method based on user role
+      if (userRole === 'farmer') {
+        console.log('Fetching farmer-specific products');
+        fetchedProducts = await productService.getFarmerOwnProducts();
+      } else if (userRole === 'vendor') {
+        console.log('Fetching vendor-specific products');
+        fetchedProducts = await productService.getProducts();
+      } else {
+        console.log('Unknown user role:', userRole);
+        fetchedProducts = [];
+      }
+      
+      console.log('Fetched products:', fetchedProducts);
       setProducts(fetchedProducts);
     } catch (error) {
-      // Error is handled by the service
+      console.error('Error fetching products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch your products",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -48,6 +68,17 @@ const ManageProducts = () => {
     try {
       await productService.deleteProduct(productId);
       setProducts(prevProducts => prevProducts.filter(product => product._id !== productId));
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
     } finally {
       setDeletingProduct(null);
     }
@@ -106,7 +137,7 @@ const ManageProducts = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ProductForm 
+              <ProductForm
                 initialData={editingProduct || undefined}
                 onSuccess={handleFormSuccess}
                 userRole={userRole}
@@ -119,7 +150,7 @@ const ManageProducts = () => {
               <TabsTrigger value="active">Active Products</TabsTrigger>
               <TabsTrigger value="sold">Sold Products</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="active" className="space-y-4">
               {products.length === 0 ? (
                 <Card>
@@ -129,7 +160,7 @@ const ManageProducts = () => {
                     </div>
                     <h3 className="mb-2 text-lg font-medium">No products available</h3>
                     <p className="mb-4 text-center text-muted-foreground">
-                      {userRole === "vendor" 
+                      {userRole === "vendor"
                         ? "You haven't added any products to your store yet."
                         : "You haven't added any products to your marketplace yet."
                       }
@@ -183,16 +214,16 @@ const ManageProducts = () => {
                         </div>
                       </CardContent>
                       <CardFooter className="flex justify-between gap-2">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="flex-1"
                           onClick={() => handleEditProduct(product)}
                         >
                           <PencilLine className="mr-2 h-4 w-4" />
                           Edit
                         </Button>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="flex-1 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
                           onClick={() => handleDeleteProduct(product._id)}
                           disabled={deletingProduct === product._id}
@@ -210,14 +241,14 @@ const ManageProducts = () => {
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="sold">
               <Card>
                 <CardContent className="flex flex-col items-center justify-center p-6">
                   <div className="mb-4 rounded-full bg-blue-100 p-3">
                     <AlertTriangle className="h-6 w-6 text-blue-600" />
                   </div>
-                  <h3 className="mb-2 text-lg font-medium">No sold products yet</h3>
+                  <h3 className="mb-2 text-lg font-medium">No sold products</h3>
                   <p className="text-center text-muted-foreground">
                     Products that have been sold will appear here.
                   </p>

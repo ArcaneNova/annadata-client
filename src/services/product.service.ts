@@ -1,5 +1,5 @@
 import { toast } from "@/hooks/use-toast";
-import type { Product } from "@/types/product";
+import { Product } from "@/types/product";
 import { api } from '@/lib/axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
@@ -30,6 +30,24 @@ class ProductService {
   async getProducts(): Promise<Product[]> {
     const response = await api.get('/products/public');
     return response.data.products;
+  }
+
+  async getFarmerOwnProducts(): Promise<Product[]> {
+    try {
+      const response = await api.get('/products', {
+        params: {
+          role: 'farmer'
+        }
+      });
+      return response.data.products;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to fetch your products",
+        variant: "destructive",
+      });
+      return [];
+    }
   }
 
   async getVendorProducts(vendorId: string): Promise<Product[]> {
@@ -116,19 +134,8 @@ class ProductService {
 
   async getFarmerProducts() {
     try {
-      const response = await fetch(`${API_BASE_URL}/products/public?sellerType=farmer`, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to fetch farmer products');
-      }
-      
-      const data = await response.json();
-      return data.products;
+      const response = await api.get('/products/marketplace/farmers');
+      return response.data.products;
     } catch (error) {
       toast({
         title: "Error",
@@ -136,6 +143,88 @@ class ProductService {
         variant: "destructive",
       });
       return [];
+    }
+  }
+  
+  // New method for vendors to purchase from farmers
+  async createBulkPurchase(data: {
+    farmerId: string;
+    items: Array<{productId: string; quantity: number}>;
+    deliveryAddress: {
+      street: string;
+      city: string;
+      state: string;
+      pincode: string;
+    };
+    deliveryDate: string;
+  }) {
+    try {
+      const response = await api.post('/bulk/farmer-purchase', data);
+      toast({
+        title: "Success",
+        description: "Bulk purchase order created successfully",
+      });
+      return response.data;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create bulk purchase",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  }
+  
+  // Get bulk purchase orders for farmers
+  async getFarmerBulkOrders() {
+    try {
+      const response = await api.get('/bulk/orders', {
+        params: { role: 'seller' }
+      });
+      return response.data.orders;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to fetch bulk orders",
+        variant: "destructive",
+      });
+      return [];
+    }
+  }
+  
+  // Get bulk purchase orders for vendors
+  async getVendorBulkOrders() {
+    try {
+      const response = await api.get('/bulk/orders', {
+        params: { role: 'buyer' }
+      });
+      return response.data.orders;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to fetch bulk orders",
+        variant: "destructive",
+      });
+      return [];
+    }
+  }
+  
+  // Update bulk order status
+  async updateBulkOrderStatus(orderId: string, status: string) {
+    try {
+      const response = await api.put(`/bulk/orders/${orderId}/status`, { status });
+      toast({
+        title: "Success",
+        description: `Order status updated to ${status}`,
+      });
+      return response.data;
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update order status",
+        variant: "destructive",
+      });
+      throw error;
     }
   }
 }

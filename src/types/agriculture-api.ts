@@ -1,4 +1,3 @@
-
 // Types for the Crop Health API responses and requests
 
 export interface SensorData {
@@ -31,6 +30,17 @@ export interface PestDetectionResult {
   organicSolutions?: string[];
   preventionMethods?: string[];
   imageUrl?: string;
+}
+
+// New interface for the plant disease prediction API response
+export interface PlantDiseasePrediction {
+  predictions: {
+    class_name: string;
+    confidence: number;
+    health_score: number;
+    prevention_tip: string;
+  }[];
+  message: string;
 }
 
 export interface IrrigationRecommendation {

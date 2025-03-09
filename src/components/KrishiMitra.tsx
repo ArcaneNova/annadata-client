@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +13,27 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Mic, Send, Bot, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
+
+// Backend API URL - try multiple possible URLs
+const getApiUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) return envUrl;
+  
+  // Try to detect the correct URL based on the current origin
+  const origin = window.location.origin;
+  console.log("Current origin:", origin);
+  
+  // If we're on localhost, use the hardcoded backend URL
+  if (origin.includes('localhost')) {
+    return "http://localhost:5000/api";
+  }
+  
+  // For production, assume API is on the same domain but with /api path
+  return `${origin}/api`;
+};
+
+const API_URL = getApiUrl();
+console.log("Using API URL:", API_URL);
 
 type Message = {
   role: "user" | "assistant";
@@ -60,51 +80,55 @@ const KrishiMitra = () => {
     }
   }, [isOpen, messages.length, language]);
 
-  // Enhanced AI response function with better language model simulation
+  // Function to call AI API through backend proxy
   const getAIResponse = async (userMessage: string): Promise<string> => {
-    // In a real implementation, this would call a ChatGPT API endpoint
-    // For now, we're simulating improved responses
+    try {
+      console.log("Sending request to AI API...");
+      
+      // Call backend proxy endpoint
+      const response = await fetch(`${API_URL}/ai/gemini`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: userMessage,
+          language: language
+        }),
+      });
 
-    // Convert message to lowercase for simple keyword matching
-    const msg = userMessage.toLowerCase();
-    
-    // Different responses based on language
-    const getLocalizedResponses = () => {
-      if (language === 'hindi') {
-        return [
-          "हमारी मौसम की भविष्यवाणी के अनुसार, अगले 5 दिनों में आपके क्षेत्र में हल्की से मध्यम बारिश होने की संभावना है। फसल की कटाई के लिए इस सप्ताह का समय बेहतर होगा।",
-          "धान की फसल के लिए, हमारा सुझाव है कि आप NPK 18:18:18 उर्वरक का उपयोग करें, जिसमें नाइट्रोजन, फॉस्फोरस और पोटाश का संतुलित अनुपात हो। मिट्टी परीक्षण के आधार पर प्रति एकड़ 100-120 किलोग्राम की दर से प्रयोग करें।",
-          "आपके क्षेत्र में गेहूं की बुवाई के लिए अक्टूबर के मध्य से नवंबर के शुरुआती सप्ताह तक का समय सबसे उपयुक्त है। HD-2967 या PBW-343 जैसी उन्नत किस्मों का चयन करें जो आपके क्षेत्र के लिए अनुकूलित हैं।",
-          "सिंचाई की आवृत्ति फसल की प्रकृति, मिट्टी के प्रकार और मौसम पर निर्भर करती है। हमारा विश्लेषण बताता है कि आपकी फसल के वर्तमान चरण में, 7-10 दिनों के अंतराल पर सिंचाई करना उचित होगा। सिंचाई से पहले मिट्टी की नमी की जांच करें।",
-          "हमारे विश्लेषण के अनुसार, आपके फसल में दिखने वाले लक्षण ब्लास्ट रोग के हैं। इस रोग को नियंत्रित करने के लिए, ट्राइसाइक्लाज़ोल 75% WP @ 0.6 ग्राम/लीटर पानी या आइसोप्रोथिओलेन 40% EC @ 1.5 मिली/लीटर पानी का छिड़काव करें। इससे पहले कि रोग फैले, रोगग्रस्त पौधों को हटा दें।",
-          "जैविक खेती के लिए, हम गोबर की खाद (10-15 टन/हेक्टेयर), वर्मीकम्पोस्ट (5-6 टन/हेक्टेयर), और नीम की खली (2-3 क्विंटल/हेक्टेयर) के संयोजन की सिफारिश करते हैं। इन्हें बुवाई से 15-20 दिन पहले मिट्टी में मिला दें।"
-        ];
-      } else if (language === 'punjabi') {
-        return [
-          "ਸਾਡੀ ਮੌਸਮ ਦੀ ਭਵਿੱਖਬਾਣੀ ਦੇ ਅਨੁਸਾਰ, ਅਗਲੇ 5 ਦਿਨਾਂ ਵਿੱਚ ਤੁਹਾਡੇ ਖੇਤਰ ਵਿੱਚ ਹਲਕੀ ਤੋਂ ਦਰਮਿਆਨੀ ਬਾਰਸ਼ ਹੋਣ ਦੀ ਸੰਭਾਵਨਾ ਹੈ। ਫਸਲ ਦੀ ਕਟਾਈ ਲਈ ਇਸ ਹਫਤੇ ਦਾ ਸਮਾਂ ਬਿਹਤਰ ਹੋਵੇਗਾ।",
-          "ਝੋਨੇ ਦੀ ਫਸਲ ਲਈ, ਸਾਡੀ ਸਲਾਹ ਹੈ ਕਿ ਤੁਸੀਂ NPK 18:18:18 ਖਾਦ ਦੀ ਵਰਤੋਂ ਕਰੋ, ਜਿਸ ਵਿੱਚ ਨਾਈਟ੍ਰੋਜਨ, ਫਾਸਫੋਰਸ ਅਤੇ ਪੋਟਾਸ਼ ਦਾ ਸੰਤੁਲਿਤ ਅਨੁਪਾਤ ਹੈ। ਮਿੱਟੀ ਦੇ ਟੈਸਟ ਦੇ ਆਧਾਰ 'ਤੇ ਪ੍ਰਤੀ ਏਕੜ 100-120 ਕਿਲੋਗ੍ਰਾਮ ਦੀ ਦਰ ਨਾਲ ਵਰਤੋਂ ਕਰੋ।",
-          "ਤੁਹਾਡੇ ਖੇਤਰ ਵਿੱਚ ਕਣਕ ਦੀ ਬਿਜਾਈ ਲਈ ਅਕਤੂਬਰ ਦੇ ਮੱਧ ਤੋਂ ਨਵੰਬਰ ਦੇ ਸ਼ੁਰੂਆਤੀ ਹਫ਼ਤੇ ਤੱਕ ਦਾ ਸਮਾਂ ਸਭ ਤੋਂ ਢੁਕਵਾਂ ਹੈ। HD-2967 ਜਾਂ PBW-343 ਵਰਗੀਆਂ ਉੱਨਤ ਕਿਸਮਾਂ ਦੀ ਚੋਣ ਕਰੋ ਜੋ ਤੁਹਾਡੇ ਖੇਤਰ ਲਈ ਅਨੁਕੂਲ ਹਨ।",
-          "ਸਿੰਚਾਈ ਦੀ ਬਾਰੰਬਾਰਤਾ ਫਸਲ ਦੀ ਪ੍ਰਕਿਰਤੀ, ਮਿੱਟੀ ਦੀ ਕਿਸਮ ਅਤੇ ਮੌਸਮ 'ਤੇ ਨਿਰਭਰ ਕਰਦੀ ਹੈ। ਸਾਡਾ ਵਿਸ਼ਲੇਸ਼ਣ ਦੱਸਦਾ ਹੈ ਕਿ ਤੁਹਾਡੀ ਫਸਲ ਦੇ ਮੌਜੂਦਾ ਪੜਾਅ 'ਤੇ, 7-10 ਦਿਨਾਂ ਦੇ ਅੰਤਰਾਲ 'ਤੇ ਸਿੰਚਾਈ ਕਰਨਾ ਉਚਿਤ ਹੋਵੇਗਾ। ਸਿੰਚਾਈ ਤੋਂ ਪਹਿਲਾਂ ਮਿੱਟੀ ਦੀ ਨਮੀ ਦੀ ਜਾਂਚ ਕਰੋ।"
-        ];
-      } else {
-        return [
-          "Based on our weather forecasting models, there's a 70% chance of light to moderate rainfall in your region over the next 5 days. This week would be optimal for harvesting your crops before the rain arrives.",
-          "For rice cultivation, our analysis recommends using NPK 18:18:18 fertilizer with a balanced ratio of nitrogen, phosphorus, and potassium. Apply at a rate of 100-120 kg per acre based on your soil test results for optimal nutrient delivery.",
-          "The ideal sowing time for wheat in your region is from mid-October to early November. Select advanced varieties like HD-2967 or PBW-343 that are adapted to your local conditions and have shown 15-20% higher yields in regional trials.",
-          "Irrigation frequency depends on crop type, soil characteristics, and weather conditions. Our analysis indicates that at your crop's current growth stage, irrigation at 7-10 day intervals would be appropriate. Check soil moisture before irrigation to optimize water usage.",
-          "Based on our image analysis, the symptoms visible on your crop leaves match those of blast disease. To control this, spray Tricyclazole 75% WP @ 0.6 g/liter water or Isoprothiolane 40% EC @ 1.5 ml/liter water. Remove affected plants before the disease spreads further.",
-          "For organic farming, we recommend a combination of farmyard manure (10-15 tons/hectare), vermicompost (5-6 tons/hectare), and neem cake (2-3 quintals/hectare). Incorporate these into the soil 15-20 days before sowing to allow proper decomposition and nutrient release."
-        ];
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("AI API error:", errorData);
+        throw new Error(`AI API error: ${errorData.error || 'Unknown error'}`);
       }
-    };
-
-    const responses = getLocalizedResponses();
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    return randomResponse;
+      
+      const data = await response.json();
+      console.log("Response received:", data);
+      
+      return data.response || "I'm sorry, I couldn't process your request at the moment. Please try again later.";
+    } catch (error) {
+      console.error("Error calling AI API:", error);
+      
+      // Show error toast
+      toast({
+        title: "Error",
+        description: "Failed to get response from AI. Please try again.",
+        variant: "destructive",
+      });
+      
+      // Fallback responses based on language if API fails
+      switch(language) {
+        case 'hindi':
+          return "क्षमा करें, मैं अभी आपके प्रश्न का उत्तर नहीं दे पा रहा हूँ। कृपया बाद में पुनः प्रयास करें।";
+        case 'punjabi':
+          return "ਮੁਆਫ ਕਰਨਾ, ਮੈਂ ਹੁਣੇ ਤੁਹਾਡੇ ਸਵਾਲ ਦਾ ਜਵਾਬ ਨਹੀਂ ਦੇ ਸਕਦਾ। ਕਿਰਪਾ ਕਰਕੇ ਬਾਅਦ ਵਿੱਚ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।";
+        default:
+          return "I apologize, but I'm unable to answer your question right now. Please try again later.";
+      }
+    }
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -118,14 +142,13 @@ const KrishiMitra = () => {
     setIsLoading(true);
 
     try {
-      // Get AI response from our enhanced function
+      // Get AI response from AI API
       const aiResponse = await getAIResponse(input);
       
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: aiResponse }
       ]);
-      setIsLoading(false);
       
     } catch (error) {
       console.error("Error sending message:", error);
@@ -134,6 +157,7 @@ const KrishiMitra = () => {
         description: "Could not send message. Please try again.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };

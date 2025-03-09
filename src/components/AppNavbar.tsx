@@ -44,9 +44,11 @@ import {
   BarChart3,
   MapPin,
   Trash2,
+  AlertTriangle,
 } from "lucide-react";
 import { useConsumerCart } from "@/hooks/use-consumer-cart";
 import { useAuth } from "@/hooks/use-auth";
+import { getUserRole } from "@/utils/auth";
 
 const AppNavbar = () => {
   const location = useLocation();
@@ -55,6 +57,12 @@ const AppNavbar = () => {
   const { user, isAuthenticated, logout, isConsumer } = useAuth();
   const { items, getTotalItems, clearCart } = useConsumerCart();
   const cartItemCount = getTotalItems();
+  const userRole = getUserRole();
+  
+  // Helper functions to check user roles
+  const isFarmer = () => userRole === 'farmer';
+  const isVendor = () => userRole === 'vendor';
+  const isUserConsumer = () => userRole === 'consumer';
   
   useEffect(() => {
     const handleScroll = () => {
@@ -69,9 +77,9 @@ const AppNavbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
   
-  const dashboardLink = user?.role === 'admin' ? "/dashboard/farmer" : 
-                       user?.role === 'vendor' ? "/dashboard/vendor" : 
-                       isConsumer() ? "/dashboard/consumer" : "/";
+  const dashboardLink = isFarmer() ? "/dashboard/farmer" : 
+                       isVendor() ? "/dashboard/vendor" : 
+                       isUserConsumer() ? "/dashboard/consumer" : "/";
   
   return (
     <header
@@ -90,153 +98,170 @@ const AppNavbar = () => {
             <div className="hidden md:flex ml-10">
               <NavigationMenu>
                 <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger>For Farmers</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
-                        <li className="row-span-3">
-                          <NavigationMenuLink asChild>
-                            <Link
-                              to="/dashboard/farmer"
-                              className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-green-50 to-green-100 p-6 no-underline outline-none focus:shadow-md"
-                            >
-                              <Leaf className="h-6 w-6 text-[#138808]" />
-                              <div className="mb-2 mt-4 text-lg font-medium">
-                                Farmer Dashboard
-                              </div>
-                              <p className="text-sm leading-tight text-muted-foreground">
-                                Manage your products, track orders, and monitor crop health
+                  {/* Show Farmer menu only if user is a farmer or not authenticated */}
+                  {(!isAuthenticated() || isFarmer()) && (
+                    <NavigationMenuItem>
+                      <NavigationMenuTrigger>For Farmers</NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
+                          <li className="row-span-3">
+                            <NavigationMenuLink asChild>
+                              <Link
+                                to="/dashboard/farmer"
+                                className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-green-50 to-green-100 p-6 no-underline outline-none focus:shadow-md"
+                              >
+                                <Leaf className="h-6 w-6 text-[#138808]" />
+                                <div className="mb-2 mt-4 text-lg font-medium">
+                                  Farmer Dashboard
+                                </div>
+                                <p className="text-sm leading-tight text-muted-foreground">
+                                  Manage your products, track orders, and monitor crop health
+                                </p>
+                              </Link>
+                            </NavigationMenuLink>
+                          </li>
+                          <li>
+                            <Link to="/farmer/products" className="bg-white block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Manage Products</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Add, edit and manage your product listings
                               </p>
                             </Link>
-                          </NavigationMenuLink>
-                        </li>
-                        <li>
-                          <Link to="/farmer/products" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Manage Products</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Add, edit and manage your product listings
-                            </p>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/agriculture/crop-health" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Crop Health</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Monitor and optimize your crop health
-                            </p>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/dashboard/analytics" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Market Analytics</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Get insights on market trends and prices
-                            </p>
-                          </Link>
-                        </li>
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                  
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger>For Vendors</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
-                        <li className="row-span-3">
-                          <NavigationMenuLink asChild>
-                            <Link
-                              to="/dashboard/vendor"
-                              className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-amber-50 to-amber-100 p-6 no-underline outline-none focus:shadow-md"
-                            >
-                              <Warehouse className="h-6 w-6 text-[#FF9933]" />
-                              <div className="mb-2 mt-4 text-lg font-medium">
-                                Vendor Dashboard
-                              </div>
-                              <p className="text-sm leading-tight text-muted-foreground">
-                                Source products, manage inventory, and grow your business
+                          </li>
+                          <li>
+                            <Link to="/agriculture/crop-health" className="bg-white block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Crop Health</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Monitor and optimize your crop health
                               </p>
                             </Link>
-                          </NavigationMenuLink>
-                        </li>
-                        <li>
-                          <Link to="/vendor/marketplace" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Marketplace</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Discover and source fresh produce directly from farmers
-                            </p>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/vendor/orders" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Orders & Delivery</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Manage your orders and delivery schedules
-                            </p>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/dashboard/analytics" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Business Analytics</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Track your business performance and growth
-                            </p>
-                          </Link>
-                        </li>
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                  
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger>For Consumers</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
-                        <li className="row-span-3">
-                          <NavigationMenuLink asChild>
-                            <Link
-                              to="/dashboard/consumer"
-                              className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-blue-50 to-blue-100 p-6 no-underline outline-none focus:shadow-md"
-                            >
-                              <Users className="h-6 w-6 text-[#0000FF]" />
-                              <div className="mb-2 mt-4 text-lg font-medium">
-                                Consumer Dashboard
-                              </div>
-                              <p className="text-sm leading-tight text-muted-foreground">
-                                Find nearby vendors, shop for fresh produce, and track orders
+                          </li>
+                          <li>
+                            <Link to="/dashboard/analytics" className="bg-white block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Market Analytics</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Get insights on market trends and prices
                               </p>
                             </Link>
-                          </NavigationMenuLink>
-                        </li>
-                        <li>
-                          <Link to="/consumer/nearby-vendors" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Nearby Vendors</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Discover vendors in your locality
-                            </p>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/checkout" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Checkout</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              Complete your purchase with secure payment options
-                            </p>
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/consumer/orders" className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
-                            <div className="text-sm font-medium leading-none">Order History</div>
-                            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                              View and track your past orders
-                            </p>
-                          </Link>
-                        </li>
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
+                          </li>
+                        </ul>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  )}
+                  
+                  {/* Show Vendor menu only if user is a vendor or not authenticated */}
+                  {(!isAuthenticated() || isVendor()) && (
+                    <NavigationMenuItem>
+                      <NavigationMenuTrigger>For Vendors</NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
+                          <li className="row-span-3">
+                            <NavigationMenuLink asChild>
+                              <Link
+                                to="/dashboard/vendor"
+                                className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-amber-50 to-amber-100 p-6 no-underline outline-none focus:shadow-md"
+                              >
+                                <Warehouse className="h-6 w-6 text-[#FF9933]" />
+                                <div className="mb-2 mt-4 text-lg font-medium">
+                                  Vendor Dashboard
+                                </div>
+                                <p className="text-sm leading-tight text-muted-foreground">
+                                  Source products, manage inventory, and grow your business
+                                </p>
+                              </Link>
+                            </NavigationMenuLink>
+                          </li>
+                          <li>
+                            <Link to="/vendor/marketplace" className="bg-white block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Marketplace</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Discover and source fresh produce directly from farmers
+                              </p>
+                            </Link>
+                          </li>
+                          <li>
+                            <Link to="/vendor/orders" className="bg-white block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Orders & Delivery</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Manage your orders and delivery schedules
+                              </p>
+                            </Link>
+                          </li>
+                          <li>
+                            <Link to="/vendor/inventory-alerts" className="bg-white block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Inventory Alerts</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Monitor low stock products and set up alerts
+                              </p>
+                            </Link>
+                          </li>
+                          <li>
+                            <Link to="/dashboard/analytics" className="bg-white block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Business Analytics</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Track your business performance and growth
+                              </p>
+                            </Link>
+                          </li>
+                        </ul>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  )}
+                  
+                  {/* Show Consumer menu only if user is a consumer or not authenticated */}
+                  {(!isAuthenticated() || isUserConsumer()) && (
+                    <NavigationMenuItem>
+                      <NavigationMenuTrigger>For Consumers</NavigationMenuTrigger>
+                      <NavigationMenuContent>
+                        <ul className="grid gap-3 p-6 md:w-[400px] lg:w-[500px] lg:grid-cols-2">
+                          <li className="row-span-3">
+                            <NavigationMenuLink asChild>
+                              <Link
+                                to="/dashboard/consumer"
+                                className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-blue-50 to-blue-100 p-6 no-underline outline-none focus:shadow-md"
+                              >
+                                <Users className="h-6 w-6 text-[#0000FF]" />
+                                <div className="mb-2 mt-4 text-lg font-medium">
+                                  Consumer Dashboard
+                                </div>
+                                <p className="text-sm leading-tight text-muted-foreground">
+                                  Find nearby vendors, shop for fresh produce, and track orders
+                                </p>
+                              </Link>
+                            </NavigationMenuLink>
+                          </li>
+                          <li>
+                            <Link to="/consumer/nearby-vendors" className="bg-white block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Nearby Vendors</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Discover vendors in your locality
+                              </p>
+                            </Link>
+                          </li>
+                          <li>
+                            <Link to="/checkout" className="bg-white block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Checkout</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                Complete your purchase with secure payment options
+                              </p>
+                            </Link>
+                          </li>
+                          <li>
+                            <Link to="/consumer/orders" className="bg-white block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground">
+                              <div className="text-sm font-medium leading-none">Order History</div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                View and track your past orders
+                              </p>
+                            </Link>
+                          </li>
+                        </ul>
+                      </NavigationMenuContent>
+                    </NavigationMenuItem>
+                  )}
                   
                   <NavigationMenuItem>
-                    <Link to="/market-prices" className={navigationMenuTriggerStyle()}>
-                      Market Prices
+                    <Link to="/" className={navigationMenuTriggerStyle()}>
+                      Home
                     </Link>
                   </NavigationMenuItem>
                 </NavigationMenuList>
@@ -245,7 +270,7 @@ const AppNavbar = () => {
           </div>
           
           <div className="flex items-center gap-4">
-            {isAuthenticated ? (
+            {isAuthenticated() ? (
               <>
                 <Button variant="outline" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
@@ -254,7 +279,7 @@ const AppNavbar = () => {
                   </Badge>
                 </Button>
                 
-                {isAuthenticated() && isConsumer() && cartItemCount > 0 && (
+                {isUserConsumer() && cartItemCount > 0 && (
                   <div className="relative mr-4">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -344,7 +369,10 @@ const AppNavbar = () => {
                       <span>Settings</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600">
+                    <DropdownMenuItem onClick={() => {
+                      logout();
+                      navigate('/login');
+                    }} className="text-red-600 cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
@@ -378,7 +406,7 @@ const AppNavbar = () => {
                   </SheetHeader>
                   <div className="py-6">
                     <div className="flex flex-col space-y-4">
-                      {isAuthenticated ? (
+                      {isAuthenticated() ? (
                         <>
                           <div className="flex items-center gap-3 mb-4">
                             <Avatar className="h-9 w-9">
@@ -386,12 +414,12 @@ const AppNavbar = () => {
                               <AvatarFallback>U</AvatarFallback>
                             </Avatar>
                             <div>
-                              <p className="font-medium">John Doe</p>
-                              <p className="text-sm text-muted-foreground capitalize">{user?.role === 'admin' ? 'Farmer' : user?.role === 'vendor' ? 'Vendor' : isConsumer() ? 'Consumer' : 'User'}</p>
+                              <p className="font-medium">{user?.name || 'User'}</p>
+                              <p className="text-sm text-muted-foreground capitalize">{isFarmer() ? 'Farmer' : isVendor() ? 'Vendor' : isUserConsumer() ? 'Consumer' : 'User'}</p>
                             </div>
                           </div>
                           
-                          <Link to={dashboardLink} className="flex items-center justify-between rounded-md p-2 hover:bg-gray-100">
+                          <Link to={dashboardLink} className="bg-white flex items-center justify-between rounded-md p-2 hover:bg-gray-100">
                             <div className="flex items-center">
                               <BarChart3 className="mr-2 h-5 w-5 text-[#138808]" />
                               <span>Dashboard</span>
@@ -410,52 +438,77 @@ const AppNavbar = () => {
                         </div>
                       )}
                       
-                      <Link to="/" className="flex items-center rounded-md p-2 hover:bg-gray-100">
+                      <Link to="/" className="bg-white flex items-center rounded-md p-2 hover:bg-gray-100">
                         <Home className="mr-2 h-5 w-5" />
                         <span>Home</span>
                       </Link>
                       
-                      <div className="pt-2 pb-1">
-                        <p className="text-sm font-medium text-muted-foreground px-2">For Farmers</p>
-                      </div>
+                      {/* Show Farmer options only if user is a farmer or not authenticated */}
+                      {(!isAuthenticated() || isFarmer()) && (
+                        <>
+                          <div className="pt-2 pb-1">
+                            <p className="bg-white text-sm font-medium text-muted-foreground px-2">For Farmers</p>
+                          </div>
+                          
+                          <Link to="/dashboard/farmer" className="bg-white flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
+                            <Leaf className="mr-2 h-5 w-5 text-[#138808]" />
+                            <span>Farmer Dashboard</span>
+                          </Link>
+                          
+                          <Link to="/farmer/products" className="bg-whiteflex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
+                            <Package className="mr-2 h-5 w-5" />
+                            <span>Manage Products</span>
+                          </Link>
+                        </>
+                      )}
                       
-                      <Link to="/dashboard/farmer" className="flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
-                        <Leaf className="mr-2 h-5 w-5 text-[#138808]" />
-                        <span>Farmer Dashboard</span>
-                      </Link>
+                      {/* Show Vendor options only if user is a vendor or not authenticated */}
+                      {(!isAuthenticated() || isVendor()) && (
+                        <>
+                          <div className="pt-2 pb-1 bg-white">
+                            <p className="text-sm font-medium text-muted-foreground px-2">For Vendors</p>
+                          </div>
+                          
+                          <Link to="/dashboard/vendor" className="bg-white flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
+                            <Warehouse className="mr-2 h-5 w-5 text-[#FF9933]" />
+                            <span>Vendor Dashboard</span>
+                          </Link>
+                          
+                          <Link to="/vendor/marketplace" className="bg-whiteflex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
+                            <ShoppingCart className="mr-2 h-5 w-5" />
+                            <span>Marketplace</span>
+                          </Link>
+                          
+                          <Link to="/vendor/orders" className="bg-white flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
+                            <Package className="mr-2 h-5 w-5" />
+                            <span>Orders & Delivery</span>
+                          </Link>
+                          
+                          <Link to="/vendor/inventory-alerts" className="bg-white flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
+                            <AlertTriangle className="mr-2 h-5 w-5" />
+                            <span>Inventory Alerts</span>
+                          </Link>
+                        </>
+                      )}
                       
-                      <Link to="/farmer/products" className="flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
-                        <Package className="mr-2 h-5 w-5" />
-                        <span>Manage Products</span>
-                      </Link>
-                      
-                      <div className="pt-2 pb-1">
-                        <p className="text-sm font-medium text-muted-foreground px-2">For Vendors</p>
-                      </div>
-                      
-                      <Link to="/dashboard/vendor" className="flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
-                        <Warehouse className="mr-2 h-5 w-5 text-[#FF9933]" />
-                        <span>Vendor Dashboard</span>
-                      </Link>
-                      
-                      <Link to="/vendor/marketplace" className="flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
-                        <ShoppingCart className="mr-2 h-5 w-5" />
-                        <span>Marketplace</span>
-                      </Link>
-                      
-                      <div className="pt-2 pb-1">
-                        <p className="text-sm font-medium text-muted-foreground px-2">For Consumers</p>
-                      </div>
-                      
-                      <Link to="/dashboard/consumer" className="flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
-                        <Users className="mr-2 h-5 w-5 text-[#0000FF]" />
-                        <span>Consumer Dashboard</span>
-                      </Link>
-                      
-                      <Link to="/consumer/nearby-vendors" className="flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
-                        <MapPin className="mr-2 h-5 w-5" />
-                        <span>Nearby Vendors</span>
-                      </Link>
+                      {/* Show Consumer options only if user is a consumer or not authenticated */}
+                      {(!isAuthenticated() || isUserConsumer()) && (
+                        <>
+                          <div className="pt-2 pb-1 bg-white">
+                            <p className="text-sm font-medium text-muted-foreground px-2">For Consumers</p>
+                          </div>
+                          
+                          <Link to="/dashboard/consumer" className="bg-white flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
+                            <Users className="mr-2 h-5 w-5 text-[#0000FF]" />
+                            <span>Consumer Dashboard</span>
+                          </Link>
+                          
+                          <Link to="/consumer/nearby-vendors" className="bg-white flex items-center rounded-md p-2 hover:bg-gray-100 pl-4">
+                            <MapPin className="mr-2 h-5 w-5" />
+                            <span>Nearby Vendors</span>
+                          </Link>
+                        </>
+                      )}
                     </div>
                   </div>
                 </SheetContent>

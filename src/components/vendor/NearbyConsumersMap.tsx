@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import L from 'leaflet';
@@ -52,11 +51,9 @@ const NearbyConsumersMap = ({ consumers = [], vendorLocation }: NearbyConsumersM
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-[#138808]" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center h-[300px]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#138808]" />
+      </div>
     );
   }
 
@@ -97,42 +94,29 @@ const NearbyConsumersMap = ({ consumers = [], vendorLocation }: NearbyConsumersM
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-[#FF9933]" />
-          Nearby Consumers Map
-        </CardTitle>
-        <CardDescription>
-          Track consumers viewing your products
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="relative h-[400px]">
-          {typeof window !== 'undefined' && (
-            <MapContainer
-              center={currentLocation}
-              zoom={13}
-              style={{ height: '100%', width: '100%' }}
-            >
-              <MapContent />
-            </MapContainer>
-          )}
+    <div className="relative h-[300px]">
+      {typeof window !== 'undefined' && (
+        <MapContainer
+          center={currentLocation}
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+        >
+          <MapContent />
+        </MapContainer>
+      )}
 
-          {/* Legend */}
-          <div className="absolute bottom-4 right-4 bg-white p-2 rounded-md shadow-md text-xs">
-            <div className="flex items-center mb-1">
-              <div className="w-3 h-3 rounded-full bg-[#138808] mr-2"></div>
-              <span>Your Location</span>
-            </div>
-            <div className="flex items-center">
-              <div className="w-4 h-4 bg-no-repeat bg-contain mr-2" style={{ backgroundImage: "url('/consumer-marker.png')" }}></div>
-              <span>Consumer</span>
-            </div>
-          </div>
+      {/* Legend */}
+      <div className="absolute bottom-4 right-4 bg-white p-2 rounded-md shadow-md text-xs">
+        <div className="flex items-center mb-1">
+          <div className="w-3 h-3 rounded-full bg-[#138808] mr-2"></div>
+          <span>Your Location</span>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex items-center">
+          <div className="w-4 h-4 bg-no-repeat bg-contain mr-2" style={{ backgroundImage: "url('/consumer-marker.png')" }}></div>
+          <span>Consumer</span>
+        </div>
+      </div>
+    </div>
   );
 };
 

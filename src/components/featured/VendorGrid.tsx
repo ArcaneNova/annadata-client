@@ -19,6 +19,86 @@ import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/axios";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import NearbyVendorNotification from "../vendor/NearbyVendorNotification";
+
+// Define dummy vendors with proper typing
+const DUMMY_VENDORS: Vendor[] = [
+  {
+    _id: "dummy-vendor-1",
+    name: "Yashashvi",
+    businessName: "Yashashvi Fresh Produce",
+    businessType: "Grocery",
+    businessLocation: {
+      type: "Point",
+      coordinates: [76.660000, 30.518000] as [number, number],
+      address: "Sector 14, Chandigarh"
+    },
+    businessImage: "/placeholder.jpg",
+    distance: 350, // meters
+    averageRating: 4.7,
+    totalRatings: 42
+  },
+  {
+    _id: "dummy-vendor-2",
+    name: "Badal",
+    businessName: "Badal Vegetable Cart",
+    businessType: "Vegetable Vendor",
+    businessLocation: {
+      type: "Point",
+      coordinates: [76.657900, 30.515800] as [number, number],
+      address: "Sector 15, Chandigarh"
+    },
+    businessImage: "/placeholder.jpg",
+    distance: 480, // meters
+    averageRating: 4.5,
+    totalRatings: 38
+  },
+  {
+    _id: "dummy-vendor-3",
+    name: "Swetank",
+    businessName: "Swetank Organic Fruits",
+    businessType: "Fruit Vendor",
+    businessLocation: {
+      type: "Point",
+      coordinates: [76.658500, 30.517200] as [number, number],
+      address: "Sector 16, Chandigarh"
+    },
+    businessImage: "/placeholder.jpg",
+    distance: 420, // meters
+    averageRating: 4.8,
+    totalRatings: 56
+  },
+  {
+    _id: "dummy-vendor-4",
+    name: "Ravi Kumar",
+    businessName: "Ravi's Fresh Farm",
+    businessType: "Farm Products",
+    businessLocation: {
+      type: "Point",
+      coordinates: [76.661000, 30.516000] as [number, number],
+      address: "Sector 17, Chandigarh"
+    },
+    businessImage: "/placeholder.jpg",
+    distance: 550, // meters
+    averageRating: 4.3,
+    totalRatings: 29
+  },
+  {
+    _id: "dummy-vendor-5",
+    name: "Priya Singh",
+    businessName: "Priya's Organic Store",
+    businessType: "Organic Products",
+    businessLocation: {
+      type: "Point",
+      coordinates: [76.659500, 30.514900] as [number, number],
+      address: "Sector 18, Chandigarh"
+    },
+    businessImage: "/placeholder.jpg",
+    distance: 620, // meters
+    averageRating: 4.6,
+    totalRatings: 47
+  }
+];
 
 interface VendorGridProps {
   onVendorSelect?: (vendor: Vendor) => void;
@@ -69,6 +149,28 @@ const VendorGrid = ({ onVendorSelect }: VendorGridProps) => {
   const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [showNotification, setShowNotification] = useState(false);
+  const [nearbyVendor, setNearbyVendor] = useState<Vendor | null>(null);
+
+  // Add useEffect to show notification after a delay
+  useEffect(() => {
+    if (vendors.length > 0 && !showNotification) {
+      // Find nearby vendors (within 500m)
+      const nearbyVendors = vendors.filter(v => (v.distance || 0) <= 500);
+      
+      if (nearbyVendors.length > 0) {
+        // Set the closest vendor for notification
+        setNearbyVendor(nearbyVendors[0]);
+        
+        // Show notification after 3 seconds
+        const timer = setTimeout(() => {
+          setShowNotification(true);
+        }, 3000);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [vendors, showNotification]);
 
   // Memoize the vendor update handler
   const handleVendorUpdate = useCallback((updatedVendors: Vendor[]) => {
@@ -87,8 +189,11 @@ const VendorGrid = ({ onVendorSelect }: VendorGridProps) => {
         }
       });
       
+      // Combine real vendors with dummy vendors
+      const allVendors = [...updatedVendors, ...DUMMY_VENDORS];
+      
       // Sort vendors by distance
-      const sortedVendors = [...updatedVendors].sort((a, b) => 
+      const sortedVendors = [...allVendors].sort((a, b) => 
         (a.distance || 0) - (b.distance || 0)
       );
       
@@ -98,9 +203,15 @@ const VendorGrid = ({ onVendorSelect }: VendorGridProps) => {
       setError(null);
     } else {
       console.error('Invalid vendor data received:', updatedVendors);
-      setVendors([]);
+      
+      // If no real vendors, just use dummy vendors
+      const sortedDummyVendors = [...DUMMY_VENDORS].sort((a, b) => 
+        (a.distance || 0) - (b.distance || 0)
+      );
+      
+      setVendors(sortedDummyVendors);
       setLoading(false);
-      setError('No vendors found nearby. Try increasing the search radius.');
+      setError(null);
     }
   }, []);
 
@@ -379,17 +490,20 @@ const VendorGrid = ({ onVendorSelect }: VendorGridProps) => {
 
     console.log("Rendering vendor card for:", vendor._id, vendor.name, vendor.businessName);
     
+    // Determine which default image to use based on vendor ID
+    let defaultImage = '/placeholder.jpg';
+    
     return (
       <Card key={vendor._id} className="overflow-hidden">
         <div className="aspect-square relative">
           <img
-            src={vendor.businessImage || '/placeholder-shop.jpg'}
+            src={vendor.businessImage || defaultImage}
             alt={vendor.businessName || vendor.name}
             className="object-cover w-full h-full"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.onerror = null;
-              target.src = '/placeholder-shop.jpg';
+              target.src = defaultImage;
             }}
           />
         </div>
@@ -422,7 +536,7 @@ const VendorGrid = ({ onVendorSelect }: VendorGridProps) => {
     );
   };
 
-    return (
+  return (
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
         <h2 className="text-2xl font-bold text-[#138808]">Nearby Vendors</h2>
@@ -596,6 +710,14 @@ const VendorGrid = ({ onVendorSelect }: VendorGridProps) => {
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* Nearby Vendor Notification */}
+      {showNotification && nearbyVendor && (
+        <NearbyVendorNotification 
+          vendor={nearbyVendor}
+          onClose={() => setShowNotification(false)}
+        />
+      )}
     </div>
   );
 };

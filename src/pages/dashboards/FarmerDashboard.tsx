@@ -4,13 +4,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { cropPrices } from "@/data/mockData";
 import { BarChart as BarGraph, LineChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Line } from 'recharts';
-import { Leaf, TrendingUp, Users, ShoppingCart, ArrowUpRight, ArrowDownRight, Plus, Edit, Trash2, Activity, HeartPulse, Thermometer, Sprout, ExternalLink, Loader2 } from "lucide-react";
+import { Leaf, TrendingUp, Users, ShoppingCart, ArrowUpRight, ArrowDownRight, Plus, Edit, Trash2, Activity, HeartPulse, Thermometer, Sprout, ExternalLink, Loader2, Package, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import StatusCard from "@/components/consumer/StatusCard";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { logout } from "@/utils/auth";
-import { Product, productService } from "@/services/product.service";
+import { api } from "@/lib/axios";
+import { Product } from "@/types/product";
+import { BulkOrder, bulkOrderService } from "@/services/bulk-order.service";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { productService } from "@/services/product.service";
 
 const salesData = [
   { month: "Jan", sales: 32500 },
@@ -32,22 +37,53 @@ const cropHealthData = {
 const FarmerDashboard = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
+  const [bulkOrders, setBulkOrders] = useState<BulkOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
   const [inventoryView, setInventoryView] = useState("grid");
+  const [activeTab, setActiveTab] = useState("inventory");
 
   useEffect(() => {
     fetchProducts();
+    fetchBulkOrders();
   }, []);
 
   const fetchProducts = async () => {
     try {
       setIsLoading(true);
-      const fetchedProducts = await productService.getProducts();
-      setProducts(fetchedProducts);
+      console.log('Fetching farmer products...');
+      // Use the product service instead of direct API call
+      const products = await productService.getFarmerOwnProducts();
+      console.log('Farmer products received:', products);
+      setProducts(products || []);
     } catch (error) {
-      // Error is handled by the service
+      console.error('Error fetching farmer products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch your products",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchBulkOrders = async () => {
+    try {
+      setIsLoadingOrders(true);
+      console.log('Fetching bulk orders for farmer...');
+      const orders = await bulkOrderService.getFarmerBulkOrders();
+      console.log('Bulk orders received:', orders);
+      setBulkOrders(orders || []);
+    } catch (error) {
+      console.error('Error fetching bulk orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch bulk orders",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingOrders(false);
     }
   };
 
@@ -60,12 +96,72 @@ const FarmerDashboard = () => {
         description: "The product has been removed from your inventory.",
       });
     } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      await bulkOrderService.updateBulkOrderStatus(orderId, status);
+      // Refresh orders after status update
+      fetchBulkOrders();
+    } catch (error) {
       // Error is handled by the service
     }
   };
 
   const handleNavigateToCropHealth = () => {
     navigate("/agriculture/crop-health");
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<string, { color: string, label: string }> = {
+      'pending': { color: 'bg-yellow-100 text-yellow-800', label: 'Pending' },
+      'accepted': { color: 'bg-blue-100 text-blue-800', label: 'Accepted' },
+      'processing': { color: 'bg-purple-100 text-purple-800', label: 'Processing' },
+      'ready-for-delivery': { color: 'bg-indigo-100 text-indigo-800', label: 'Ready for Delivery' },
+      'in-transit': { color: 'bg-orange-100 text-orange-800', label: 'In Transit' },
+      'delivered': { color: 'bg-green-100 text-green-800', label: 'Delivered' },
+      'rejected': { color: 'bg-red-100 text-red-800', label: 'Rejected' },
+      'cancelled': { color: 'bg-gray-100 text-gray-800', label: 'Cancelled' }
+    };
+
+    const statusInfo = statusMap[status] || { color: 'bg-gray-100 text-gray-800', label: status };
+    
+    return (
+      <span className={`px-2 py-1 rounded-full text-xs ${statusInfo.color}`}>
+        {statusInfo.label}
+      </span>
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getPendingOrdersCount = () => {
+    return bulkOrders.filter(order => order.status === 'pending').length;
+  };
+
+  const getActiveOrdersCount = () => {
+    return bulkOrders.filter(order => 
+      ['accepted', 'processing', 'ready-for-delivery', 'in-transit'].includes(order.status)
+    ).length;
+  };
+
+  const getTotalSales = () => {
+    return bulkOrders
+      .filter(order => order.status === 'delivered')
+      .reduce((total, order) => total + order.totalAmount, 0);
   };
 
   return (
@@ -87,18 +183,18 @@ const FarmerDashboard = () => {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
           <StatusCard 
             title="Total Sales"
-            value="₹42,500"
-            description="+12.5% from last month"
+            value={`₹${getTotalSales().toLocaleString()}`}
+            description="From bulk orders to vendors"
             icon={TrendingUp}
             iconColor="text-green-600"
             bgGradient="bg-gradient-to-br from-green-50 to-green-100"
           />
           
           <StatusCard 
-            title="Active Buyers"
-            value="24"
-            description="+4 new this week"
-            icon={Users}
+            title="Active Bulk Orders"
+            value={getActiveOrdersCount().toString()}
+            description={`${getPendingOrdersCount()} pending approval`}
+            icon={Package}
             iconColor="text-blue-600"
             bgGradient="bg-gradient-to-br from-blue-50 to-blue-100"
           />
@@ -292,120 +388,263 @@ const FarmerDashboard = () => {
           <CardHeader className="border-b bg-gray-50">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <CardTitle>Inventory Management</CardTitle>
-                <CardDescription>Manage your products and inventory</CardDescription>
+                <CardTitle>Farmer Management</CardTitle>
+                <CardDescription>Manage your products and bulk orders from vendors</CardDescription>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setInventoryView("grid")}>
-                  Grid
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setInventoryView("table")}>
-                  Table
-                </Button>
-                <Link to="/farmer/products">
-                  <Button className="bg-[#138808] hover:bg-[#138808]/90">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Product
-                  </Button>
-                </Link>
-              </div>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:w-auto">
+                <TabsList>
+                  <TabsTrigger value="inventory">
+                    Inventory
+                  </TabsTrigger>
+                  <TabsTrigger value="bulkOrders" className="relative">
+                    Bulk Orders
+                    {getPendingOrdersCount() > 0 && (
+                      <Badge variant="destructive" className="ml-2">
+                        {getPendingOrdersCount()}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </CardHeader>
           <CardContent className="pt-6">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              </div>
-            ) : inventoryView === "grid" ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {products.map((product) => (
-                  <div key={product._id} className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold">{product.name}</h4>
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-500">Quantity</p>
-                        <p className="font-medium">{product.stock} {product.unit}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Price/{product.unit}</p>
-                        <p className="font-medium">₹{product.price}</p>
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-2 mt-4">
-                      <Link to={`/farmer/products/${product._id}/edit`}>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
-                      </Link>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => handleDeleteProduct(product._id)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
-                    </div>
+            <Tabs value={activeTab} className="w-full">
+              <TabsContent value="inventory" className="mt-0">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setInventoryView("grid")}>
+                      Grid
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setInventoryView("table")}>
+                      Table
+                    </Button>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                  <Link to="/farmer/products">
+                    <Button className="bg-[#138808] hover:bg-[#138808]/90">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Product
+                    </Button>
+                  </Link>
+                </div>
+                
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                  </div>
+                ) : products.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">No Products Yet</h3>
+                    <p className="text-gray-500 mb-4">You haven't added any products to your inventory.</p>
+                    <Link to="/farmer/products">
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Your First Product
+                      </Button>
+                    </Link>
+                  </div>
+                ) : inventoryView === "grid" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {products.map((product) => (
-                      <TableRow key={product._id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>{product.stock} {product.unit}</TableCell>
-                        <TableCell>₹{product.price}/{product.unit}</TableCell>
-                        <TableCell>
+                      <div key={product._id} className="p-4 rounded-lg bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold">{product.name}</h4>
                           <span className={`px-2 py-1 rounded-full text-xs ${
                             product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                           }`}>
                             {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
                           </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Link to={`/farmer/products/${product._id}/edit`}>
-                              <Button variant="outline" size="sm">
-                                <Edit className="h-4 w-4 mr-1" />
-                                Edit
-                              </Button>
-                            </Link>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => handleDeleteProduct(product._id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-1" />
-                              Delete
-                            </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-500">Quantity</p>
+                            <p className="font-medium">{product.stock} {product.unit}</p>
                           </div>
-                        </TableCell>
-                      </TableRow>
+                          <div>
+                            <p className="text-gray-500">Price/{product.unit}</p>
+                            <p className="font-medium">₹{product.price}</p>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-4">
+                          <Link to={`/farmer/products/${product._id}/edit`}>
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                          </Link>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDeleteProduct(product._id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product</TableHead>
+                          <TableHead>Quantity</TableHead>
+                          <TableHead>Price</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {products.map((product) => (
+                          <TableRow key={product._id}>
+                            <TableCell className="font-medium">{product.name}</TableCell>
+                            <TableCell>{product.stock} {product.unit}</TableCell>
+                            <TableCell>₹{product.price}/{product.unit}</TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                product.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                                {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Link to={`/farmer/products/${product._id}/edit`}>
+                                  <Button variant="outline" size="sm">
+                                    <Edit className="h-4 w-4 mr-1" />
+                                    Edit
+                                  </Button>
+                                </Link>
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm"
+                                  onClick={() => handleDeleteProduct(product._id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="bulkOrders" className="mt-0">
+                {isLoadingOrders ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                  </div>
+                ) : bulkOrders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">No Bulk Orders Yet</h3>
+                    <p className="text-gray-500">You haven't received any bulk orders from vendors yet.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order ID</TableHead>
+                          <TableHead>Vendor</TableHead>
+                          <TableHead>Items</TableHead>
+                          <TableHead>Total Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Expected Delivery</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {bulkOrders.map((order) => (
+                          <TableRow key={order._id}>
+                            <TableCell className="font-medium">{order._id.substring(0, 8)}...</TableCell>
+                            <TableCell>{order.buyer.name}</TableCell>
+                            <TableCell>{order.items.length} items</TableCell>
+                            <TableCell>₹{order.totalAmount.toLocaleString()}</TableCell>
+                            <TableCell>{getStatusBadge(order.status)}</TableCell>
+                            <TableCell>{formatDate(order.expectedDeliveryDate)}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                {order.status === 'pending' && (
+                                  <>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                                      onClick={() => handleUpdateOrderStatus(order._id, 'accepted')}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                      Accept
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      className="bg-red-50 hover:bg-red-100 text-red-700 border-red-200"
+                                      onClick={() => handleUpdateOrderStatus(order._id, 'rejected')}
+                                    >
+                                      <XCircle className="h-4 w-4 mr-1" />
+                                      Reject
+                                    </Button>
+                                  </>
+                                )}
+                                
+                                {order.status === 'accepted' && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleUpdateOrderStatus(order._id, 'processing')}
+                                  >
+                                    <Clock className="h-4 w-4 mr-1" />
+                                    Start Processing
+                                  </Button>
+                                )}
+                                
+                                {order.status === 'processing' && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleUpdateOrderStatus(order._id, 'ready-for-delivery')}
+                                  >
+                                    <Package className="h-4 w-4 mr-1" />
+                                    Mark Ready
+                                  </Button>
+                                )}
+                                
+                                {order.status === 'ready-for-delivery' && (
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleUpdateOrderStatus(order._id, 'in-transit')}
+                                  >
+                                    <TrendingUp className="h-4 w-4 mr-1" />
+                                    Mark In Transit
+                                  </Button>
+                                )}
+                                
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                >
+                                  <ExternalLink className="h-4 w-4 mr-1" />
+                                  View Details
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </div>

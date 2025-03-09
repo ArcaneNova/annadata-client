@@ -29,6 +29,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { api } from "@/lib/axios";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const salesData = [
   { day: "Mon", sales: 2800 },
@@ -151,6 +152,14 @@ const VendorDashboard = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportType, setExportType] = useState<string | null>(null);
   
+  // State for order status distribution
+  const [orderStatusData, setOrderStatusData] = useState([
+    { status: 'Pending', count: 0, color: '#FFBB28' },
+    { status: 'Confirmed', count: 0, color: '#00C49F' },
+    { status: 'Delivered', count: 0, color: '#0088FE' },
+    { status: 'Cancelled', count: 0, color: '#FF8042' }
+  ]);
+  
   // Calculate dashboard stats
   const totalProducts = products.length;
   const lowStockProducts = products.filter(p => p.stock < alertThreshold).length;
@@ -229,7 +238,7 @@ const VendorDashboard = () => {
     }
 
     try {
-      setIsTracking(true);
+        setIsTracking(true);
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
@@ -239,7 +248,7 @@ const VendorDashboard = () => {
       });
 
       const location = {
-        lat: position.coords.latitude,
+            lat: position.coords.latitude,
         lng: position.coords.longitude
       };
 
@@ -249,11 +258,11 @@ const VendorDashboard = () => {
       // Start continuous location watching
       const watchId = navigator.geolocation.watchPosition(
         async (pos) => {
-          const newLocation = {
+        const newLocation = {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude
-          };
-          setCurrentLocation(newLocation);
+        };
+        setCurrentLocation(newLocation);
           await updateVendorLocation(newLocation);
         },
         (error) => {
@@ -357,9 +366,9 @@ const VendorDashboard = () => {
         setTotalPages(Math.ceil(data.length / itemsPerPage));
         calculateRatingStats(data);
       } else if (data.products) {
-        setProducts(data.products);
+      setProducts(data.products);
         setTotalPages(data.totalPages || Math.ceil(data.products.length / itemsPerPage));
-        calculateRatingStats(data.products);
+      calculateRatingStats(data.products);
       } else {
         setProducts([]);
         setTotalPages(1);
@@ -674,7 +683,36 @@ const VendorDashboard = () => {
     }
   };
 
-  // Add this to initialize function to load orders
+  // Calculate order status distribution whenever orders change
+  useEffect(() => {
+    if (orders.length > 0) {
+      // Initialize counts
+      const statusCounts = {
+        pending: 0,
+        confirmed: 0,
+        delivered: 0,
+        cancelled: 0
+      };
+      
+      // Count orders by status
+      orders.forEach(order => {
+        const status = order.status.toLowerCase();
+        if (status in statusCounts) {
+          statusCounts[status as keyof typeof statusCounts]++;
+        }
+      });
+      
+      // Update state
+      setOrderStatusData([
+        { status: 'Pending', count: statusCounts.pending, color: '#FFBB28' },
+        { status: 'Confirmed', count: statusCounts.confirmed, color: '#00C49F' },
+        { status: 'Delivered', count: statusCounts.delivered, color: '#0088FE' },
+        { status: 'Cancelled', count: statusCounts.cancelled, color: '#FF8042' }
+      ]);
+    }
+  }, [orders]);
+
+  // Load orders on component mount
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -801,168 +839,234 @@ const VendorDashboard = () => {
           </Card>
         )}
 
-        {/* Navigation Cards for Vendor Features */}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-          <Link to="/vendor/dashboard">
-            <Card className="hover:bg-gray-50 cursor-pointer h-full">
-              <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                <ShoppingBag className="h-8 w-8 mb-2 text-blue-500" />
-                <h3 className="font-medium">Dashboard</h3>
-                <p className="text-xs text-muted-foreground">Overview & Stats</p>
-              </CardContent>
-            </Card>
-          </Link>
+        <div className="space-y-8">
+          {/* Navigation Cards for Vendor Features */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+            <Link to="/vendor/dashboard">
+              <Card className="hover:bg-gray-50 cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
+                  <ShoppingBag className="h-8 w-8 mb-2 text-blue-500" />
+                  <h3 className="font-medium">Dashboard</h3>
+                  <p className="text-xs text-muted-foreground">Overview & Stats</p>
+                </CardContent>
+              </Card>
+            </Link>
+            
+            <Link to="/vendor/products">
+              <Card className="hover:bg-gray-50 cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
+                  <Package className="h-8 w-8 mb-2 text-green-500" />
+                  <h3 className="font-medium">Products</h3>
+                  <p className="text-xs text-muted-foreground">Manage Inventory</p>
+                </CardContent>
+              </Card>
+            </Link>
+            
+            <Link to="/vendor/orders">
+              <Card className="hover:bg-gray-50 cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
+                  <ShoppingCart className="h-8 w-8 mb-2 text-purple-500" />
+                  <h3 className="font-medium">Orders</h3>
+                  <p className="text-xs text-muted-foreground">Customer Orders</p>
+                </CardContent>
+              </Card>
+            </Link>
+            
+            <Link to="/vendor/analytics">
+              <Card className="hover:bg-gray-50 cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
+                  <BarChart2 className="h-8 w-8 mb-2 text-orange-500" />
+                  <h3 className="font-medium">Analytics</h3>
+                  <p className="text-xs text-muted-foreground">Sales & Performance</p>
+                </CardContent>
+              </Card>
+            </Link>
+            
+            <Link to="/vendor/inventory-alerts">
+              <Card className="hover:bg-gray-50 cursor-pointer h-full">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
+                  <Bell className="h-8 w-8 mb-2 text-red-500" />
+                  <h3 className="font-medium">Inventory Alerts</h3>
+                  <p className="text-xs text-muted-foreground">Stock Notifications</p>
+                </CardContent>
+              </Card>
+            </Link>
+          </div>
           
-          <Link to="/vendor/products">
-            <Card className="hover:bg-gray-50 cursor-pointer h-full">
-              <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                <Package className="h-8 w-8 mb-2 text-green-500" />
-                <h3 className="font-medium">Products</h3>
-                <p className="text-xs text-muted-foreground">Manage Inventory</p>
-              </CardContent>
-            </Card>
-          </Link>
-          
-          <Link to="/vendor/orders">
-            <Card className="hover:bg-gray-50 cursor-pointer h-full">
-              <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                <ShoppingCart className="h-8 w-8 mb-2 text-purple-500" />
-                <h3 className="font-medium">Orders</h3>
-                <p className="text-xs text-muted-foreground">Customer Orders</p>
-              </CardContent>
-            </Card>
-          </Link>
-          
-          <Link to="/vendor/analytics">
-            <Card className="hover:bg-gray-50 cursor-pointer h-full">
-              <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                <BarChart2 className="h-8 w-8 mb-2 text-orange-500" />
-                <h3 className="font-medium">Analytics</h3>
-                <p className="text-xs text-muted-foreground">Sales & Performance</p>
-              </CardContent>
-            </Card>
-          </Link>
-          
-          <Link to="/vendor/inventory-alerts">
-            <Card className="hover:bg-gray-50 cursor-pointer h-full">
-              <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-                <Bell className="h-8 w-8 mb-2 text-red-500" />
-                <h3 className="font-medium">Inventory Alerts</h3>
-                <p className="text-xs text-muted-foreground">Stock Notifications</p>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="py-4">
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5 text-blue-500" />
-                Total Products
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{totalProducts}</div>
-              <p className="text-sm text-muted-foreground">Active products in your inventory</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="py-4">
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-green-500" />
-                Total Value
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">₹{totalValue.toFixed(2)}</div>
-              <p className="text-sm text-muted-foreground">Current inventory value</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="py-4">
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-purple-500" />
-                Nearby Customers
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{nearbyConsumersCount}</div>
-              <p className="text-sm text-muted-foreground">
-                {isTracking ? 'Active customers in your area' : 'Location tracking disabled'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="py-4">
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                Low Stock Alert
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">{lowStockProducts}</div>
-              <p className="text-sm text-muted-foreground">Products with low stock</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Orders</CardTitle>
-              <CardDescription>Your most recent customer orders</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {newOrders.length === 0 ? (
-                <div className="text-center py-8">
-                  <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-                  <h3 className="mt-4 text-lg font-medium">No recent orders</h3>
-                  <p className="text-sm text-muted-foreground">
-                    New orders will appear here
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {newOrders.slice(0, 3).map((order) => (
-                    <div
-                      key={order._id}
-                      className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
-                      onClick={() => handleViewOrder(order)}
-                    >
-                      <div>
-                        <p className="font-medium">Order #{order.orderNumber}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {order.items.length} items - ₹{order.totalAmount}
-                        </p>
-                      </div>
-                      <Badge className={
-                        order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        order.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100'
-                      }>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </Badge>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-2 bg-blue-50 rounded-full">
+                      <Package className="h-8 w-8 text-blue-500" />
                     </div>
-                  ))}
-                  <Button variant="outline" className="w-full" onClick={() => navigate("/vendor/orders")}>
-                    View All Orders
-                  </Button>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Products</p>
+                      <h3 className="text-2xl font-bold">{totalProducts}</h3>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 p-2 rounded-full">
+                    <ArrowUpRight className="h-4 w-4 text-blue-500" />
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Nearby Customers</CardTitle>
-              <CardDescription>Customers in your vicinity</CardDescription>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="h-[300px] relative">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-2 bg-red-50 rounded-full">
+                      <AlertTriangle className="h-8 w-8 text-red-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Low Stock</p>
+                      <h3 className="text-2xl font-bold">{lowStockProducts}</h3>
+                    </div>
+                  </div>
+                  <div className="bg-red-50 p-2 rounded-full">
+                    <ArrowUpRight className="h-4 w-4 text-red-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-2 bg-green-50 rounded-full">
+                      <ShoppingBag className="h-8 w-8 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Inventory Value</p>
+                      <h3 className="text-2xl font-bold">₹{totalValue.toLocaleString()}</h3>
+                    </div>
+                  </div>
+                  <div className="bg-green-50 p-2 rounded-full">
+                    <ArrowUpRight className="h-4 w-4 text-green-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between space-x-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="p-2 bg-orange-50 rounded-full">
+                      <ShoppingCart className="h-8 w-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total Orders</p>
+                      <h3 className="text-2xl font-bold">{orders.length}</h3>
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 p-2 rounded-full">
+                    <ArrowUpRight className="h-4 w-4 text-orange-500" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2 mb-8">
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Sales Trend</CardTitle>
+                <CardDescription>Last 7 days</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={salesData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
+                      <XAxis dataKey="day" tick={{ fill: '#888888' }} />
+                      <YAxis tick={{ fill: '#888888' }} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'white', 
+                          border: '1px solid #f0f0f0',
+                          borderRadius: '4px',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                        }} 
+                        formatter={(value) => [`₹${value}`, 'Sales']}
+                        labelFormatter={(label) => `Day: ${label}`}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="sales" 
+                        name="Daily Sales" 
+                        stroke="#138808" 
+                        strokeWidth={2}
+                        dot={{ fill: '#138808', r: 4 }}
+                        activeDot={{ r: 6, fill: '#FF9933' }} 
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2 mb-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Orders</CardTitle>
+                <CardDescription>Your most recent customer orders</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {ordersLoading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-[#138808]" />
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
+                    <h3 className="mt-4 text-lg font-medium">No recent orders</h3>
+                    <p className="text-sm text-muted-foreground">
+                      New orders will appear here
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.slice(0, 3).map((order) => (
+                      <div
+                        key={order._id}
+                        className="flex items-center justify-between p-4 border rounded-lg cursor-pointer hover:bg-gray-50"
+                        onClick={() => handleViewOrder(order)}
+                      >
+                        <div>
+                          <p className="font-medium">Order #{order.orderNumber}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {order.items.length} items - ₹{order.totalAmount}
+                          </p>
+                        </div>
+                        <Badge className={
+                          order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          order.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100'
+                        }>
+                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        </Badge>
+                      </div>
+                    ))}
+                    <Button variant="outline" className="w-full" onClick={() => navigate("/vendor/orders")}>
+                      View All Orders
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Nearby Customers</CardTitle>
+                <CardDescription>Customers in your vicinity</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0 h-[300px]">
                 {currentLocation ? (
                   <NearbyConsumersMap
                     vendorLocation={currentLocation}
@@ -986,32 +1090,9 @@ const VendorDashboard = () => {
                     </div>
                   </div>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-3 mb-8">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Sales Overview</CardTitle>
-              <CardDescription>Weekly sales performance</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={salesData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="day" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="sales" stroke="#8884d8" activeDot={{ r: 8 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader>
@@ -1021,23 +1102,44 @@ const VendorDashboard = () => {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
                     <Pie
                       data={productDistribution}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      outerRadius={80}
+                      outerRadius={100}
+                      innerRadius={40}
                       fill="#8884d8"
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      paddingAngle={2}
                     >
                       {productDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={COLORS[index % COLORS.length]} 
+                          stroke="#ffffff"
+                          strokeWidth={2}
+                        />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #f0f0f0',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      }}
+                      formatter={(value) => [`${value}%`, 'Percentage']}
+                    />
+                    <Legend 
+                      layout="horizontal" 
+                      verticalAlign="bottom" 
+                      align="center"
+                      iconType="circle"
+                      iconSize={10}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -1045,111 +1147,46 @@ const VendorDashboard = () => {
           </Card>
         </div>
 
-        <div className="mb-8">
+        <div className="grid gap-6 lg:grid-cols-2 mb-8">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Latest Products</CardTitle>
-                <CardDescription>Your recently added products</CardDescription>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Link to="/vendor/products">
-                  <Button variant="outline">View All Products</Button>
-                </Link>
-                <Button onClick={handleAddProduct}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Product
-                </Button>
-              </div>
+            <CardHeader>
+              <CardTitle>Order Status Distribution</CardTitle>
+              <CardDescription>By order status</CardDescription>
             </CardHeader>
             <CardContent>
-              {errorMessage ? (
-                <div className="text-center py-8 text-red-500">
-                  <p>{errorMessage}</p>
-                  <Button 
-                    variant="outline" 
-                    onClick={fetchProducts}
-                    className="mt-4"
-                  >
-                    Retry
-                  </Button>
-                </div>
-              ) : products.length === 0 ? (
-                <div className="text-center py-8">
-                  <Package className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-                  <h3 className="mt-4 text-lg font-medium">No products yet</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Add your first product to start selling
-                  </p>
-                  <Button 
-                    onClick={handleAddProduct}
-                    className="mt-4"
-                  >
-                    Add Product
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4">Name</th>
-                        <th className="text-left py-3 px-4">Category</th>
-                        <th className="text-right py-3 px-4">Price</th>
-                        <th className="text-right py-3 px-4">Stock</th>
-                        <th className="text-right py-3 px-4">Rating</th>
-                        <th className="text-right py-3 px-4">Margin</th>
-                        <th className="text-right py-3 px-4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {products.slice(0, 5).map((product) => (
-                        <tr key={product._id} className="border-b">
-                          <td className="py-3 px-4">{product.name}</td>
-                          <td className="py-3 px-4">{product.category}</td>
-                          <td className="text-right py-3 px-4">₹{product.price}</td>
-                          <td className="text-right py-3 px-4">
-                            <span className={product.stock < 10 ? 'text-red-500' : ''}>
-                              {product.stock}
-                            </span>
-                          </td>
-                          <td className="text-right py-3 px-4">
-                            {product.averageRating ? (
-                              <span>⭐ {product.averageRating.toFixed(1)} ({product.totalRatings})</span>
-                            ) : (
-                              'No ratings'
-                            )}
-                          </td>
-                          <td className="text-right py-3 px-4">
-                            {product.marginPercentage}%
-                          </td>
-                          <td className="text-right py-3 px-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditProduct(product._id)}
-                              className="mr-2"
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteProduct(product._id)}
-                            >
-                              Delete
-                            </Button>
-                          </td>
-                        </tr>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={orderStatusData} margin={{ top: 20, right: 30, left: 20, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
+                    <XAxis dataKey="status" tick={{ fill: '#888888' }} />
+                    <YAxis tick={{ fill: '#888888' }} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #f0f0f0',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      }}
+                      formatter={(value) => [`${value} orders`, 'Orders']}
+                    />
+                    <Legend 
+                      layout="horizontal" 
+                      verticalAlign="bottom" 
+                      align="center"
+                      iconType="circle"
+                      iconSize={10}
+                    />
+                    <Bar dataKey="count" name="Order Count" radius={[4, 4, 0, 0]}>
+                      {orderStatusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
-        </div>
 
-        <div className="grid gap-6 md:grid-cols-3 mb-8">
           <Card>
             <CardHeader>
               <CardTitle>Export Options</CardTitle>
