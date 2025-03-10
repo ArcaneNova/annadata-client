@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { isAuthenticated as checkAuth, getUser, getUserRole, logout as authLogout } from '@/utils/auth';
 
 interface User {
-  id: string;
+  _id: string;
   name: string;
   email: string;
-  role: 'consumer' | 'vendor' | 'admin';
+  role: 'consumer' | 'vendor' | 'farmer' | 'admin';
+  phone: string;
 }
 
 interface AuthState {
@@ -16,6 +18,8 @@ interface AuthState {
   logout: () => void;
   isAuthenticated: () => boolean;
   isConsumer: () => boolean;
+  isFarmer: () => boolean;
+  isVendor: () => boolean;
 }
 
 export const useAuth = create<AuthState>()(
@@ -40,17 +44,23 @@ export const useAuth = create<AuthState>()(
         set({ token });
       },
       logout: () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        authLogout();
         set({ user: null, token: null });
       },
       isAuthenticated: () => {
-        const state = get();
-        return !!state.token && !!state.user;
+        return checkAuth();
       },
       isConsumer: () => {
-        const state = get();
-        return !!state.user && state.user.role === 'consumer';
+        const role = getUserRole();
+        return role === 'consumer';
+      },
+      isFarmer: () => {
+        const role = getUserRole();
+        return role === 'farmer';
+      },
+      isVendor: () => {
+        const role = getUserRole();
+        return role === 'vendor';
       }
     }),
     {
@@ -58,11 +68,11 @@ export const useAuth = create<AuthState>()(
       onRehydrateStorage: () => {
         // Initialize state from localStorage on page load
         return (state) => {
-          const storedUser = localStorage.getItem('user');
-          const storedToken = localStorage.getItem('token');
-          if (storedUser && storedToken) {
-            state?.setUser(JSON.parse(storedUser));
-            state?.setToken(storedToken);
+          const user = getUser();
+          const token = localStorage.getItem('token');
+          if (user && token) {
+            state?.setUser(user);
+            state?.setToken(token);
           }
         };
       }

@@ -126,7 +126,8 @@ const Login = () => {
       });
       
       // Redirect based on user role from API response
-      navigate(`/dashboard/${data.user.role}`);
+      const dashboardPath = `/dashboard/${data.user.role}`;
+      navigate(dashboardPath);
     } catch (error) {
       toast({
         title: "Login Failed",

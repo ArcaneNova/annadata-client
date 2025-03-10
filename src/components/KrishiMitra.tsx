@@ -23,8 +23,42 @@ const getApiUrl = () => {
   const origin = window.location.origin;
   console.log("Current origin:", origin);
   
-  // If we're on localhost, use the hardcoded backend URL
+  // If we're on localhost, try multiple possible backend URLs
   if (origin.includes('localhost')) {
+    // We'll try to connect to these URLs in order
+    const possiblePorts = [5000, 5001, 5002, 3000];
+    
+    // Store the API URL in localStorage if we've found a working one before
+    const savedApiUrl = localStorage.getItem('krishiMitraApiUrl');
+    if (savedApiUrl) {
+      console.log("Using saved API URL:", savedApiUrl);
+      return savedApiUrl;
+    }
+    
+    // Try each port (this is async but we'll return the default and update later if needed)
+    (async () => {
+      for (const port of possiblePorts) {
+        const url = `http://localhost:${port}/api`;
+        try {
+          console.log(`Trying API URL: ${url}`);
+          const response = await fetch(`${url}/health`, { 
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          
+          if (response.ok) {
+            console.log(`Found working API URL: ${url}`);
+            localStorage.setItem('krishiMitraApiUrl', url);
+            window.location.reload(); // Reload to use the working URL
+            return;
+          }
+        } catch (error) {
+          console.log(`API URL ${url} failed:`, error);
+        }
+      }
+    })();
+    
+    // Return the default URL while we're checking
     return "http://localhost:5000/api";
   }
   

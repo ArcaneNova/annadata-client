@@ -67,7 +67,7 @@ const AppLayout = () => {
       <main>
         <Suspense fallback={<LoadingSpinner />}>
           <Routes>
-            <Route path="/" element={<VendorGrid />} />
+            <Route path="/" element={<Index />} />
             <Route path="/featured" element={<FeaturedProducts />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -137,7 +137,11 @@ const AppLayout = () => {
                 <VendorInventoryAlerts />
               </ProtectedRoute>
             } />
-            <Route path="/consumer/nearby-vendors" element={<NearbyVendors />} />
+            <Route path="/consumer/nearby-vendors" element={
+              <ProtectedRoute allowedRoles={["consumer"]}>
+                <NearbyVendors />
+              </ProtectedRoute>
+            } />
             <Route path="/checkout" element={
               <ProtectedRoute allowedRoles={["consumer"]}>
                 <Checkout />
