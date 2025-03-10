@@ -1,19 +1,11 @@
-import { Navigate } from 'react-router-dom';
-import { isAuthenticated, getUserRole } from '@/utils/auth';
+import { ReactNode } from 'react';
 
 interface PublicRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const PublicRoute = ({ children }: PublicRouteProps) => {
-  const isLoggedIn = isAuthenticated();
-  const userRole = getUserRole();
-
-  if (isLoggedIn && userRole) {
-    // Redirect authenticated users to their respective dashboards
-    return <Navigate to={`/dashboard/${userRole}`} replace />;
-  }
-
+  // Removed all redirection logic - now allows all access
   return <>{children}</>;
 };
 
