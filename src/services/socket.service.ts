@@ -91,7 +91,7 @@ class SocketService {
           transports: ['websocket'],
         path: '/socket.io',
           autoConnect: false,
-          reconnection: false, // We'll handle reconnection manually
+          reconnection: false // We'll handle reconnection manually
         };
 
         // Add authentication if token exists

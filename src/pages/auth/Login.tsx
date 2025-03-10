@@ -98,9 +98,7 @@ const Login = () => {
       const response = await fetch(`${apiUrl}/auth/login/${userType}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Origin': window.location.origin
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           email: loginMethod === "email" ? formData.email : undefined,

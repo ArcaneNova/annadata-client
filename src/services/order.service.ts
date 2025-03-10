@@ -63,17 +63,16 @@ export interface Order {
 class OrderService {
   async createOrder(orderData: CreateOrderInput): Promise<{ order: Order }> {
     try {
-      // Validate product IDs before sending
       const validatedProducts = orderData.products.map(product => ({
         ...product,
-        productId: product.productId.toString() // Ensure it's a string
+        productId: product.productId.toString()
       }));
 
       const response = await fetch(`${API_BASE_URL}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
           ...orderData,
