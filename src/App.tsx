@@ -72,80 +72,78 @@ const AppLayout = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard/farmer" element={
-              <ProtectedRoute allowedRoles={["farmer"]}>
                 <FarmerDashboard />
-              </ProtectedRoute>
             } />
             <Route path="/dashboard/vendor" element={
-              <ProtectedRoute allowedRoles={["vendor"]}>
+             
                 <VendorDashboard />
-              </ProtectedRoute>
+            
             } />
             <Route path="/dashboard/consumer" element={
-              <ProtectedRoute allowedRoles={["consumer"]}>
+              
                 <ConsumerDashboard />
-              </ProtectedRoute>
+          
             } />
             <Route path="/dashboard/analytics" element={<MarketAnalytics />} />
             <Route path="/agriculture/crop-health" element={
-              <ProtectedRoute allowedRoles={["farmer"]}>
+              
                 <CropHealthDashboard />
-              </ProtectedRoute>
+           
             } />
             <Route path="/farmer/products" element={
-              <ProtectedRoute allowedRoles={["farmer"]}>
+              
                 <ManageProducts />
-              </ProtectedRoute>
+            
             } />
             <Route path="/vendor/products" element={
-              <ProtectedRoute allowedRoles={["vendor"]}>
+             
                 <VendorProducts />
-              </ProtectedRoute>
+           
             } />
             <Route path="/vendor/products/:id" element={
-              <ProtectedRoute allowedRoles={["vendor"]}>
+             
                 <ManageProducts />
-              </ProtectedRoute>
+       
             } />
             <Route path="/vendor/marketplace" element={
-              <ProtectedRoute allowedRoles={["vendor"]}>
+           
                 <FarmerMarketplace />
-              </ProtectedRoute>
+             
             } />
             <Route path="/vendor/dashboard" element={
-              <ProtectedRoute allowedRoles={["vendor"]}>
+             
                 <VendorDashboard />
-              </ProtectedRoute>
+  
             } />
             <Route path="/vendor/analytics" element={
-              <ProtectedRoute allowedRoles={["vendor"]}>
+              
                 <VendorAnalytics />
-              </ProtectedRoute>
+                
             } />
             <Route path="/vendor/export" element={
-              <ProtectedRoute allowedRoles={["vendor"]}>
+             
                 <VendorExport />
-              </ProtectedRoute>
+             
             } />
             <Route path="/vendor/orders" element={
-              <ProtectedRoute allowedRoles={["vendor"]}>
+             
                 <VendorOrders />
-              </ProtectedRoute>
+              
             } />
             <Route path="/vendor/inventory-alerts" element={
-              <ProtectedRoute allowedRoles={["vendor"]}>
+              
                 <VendorInventoryAlerts />
-              </ProtectedRoute>
+            
             } />
             <Route path="/consumer/nearby-vendors" element={
-              <ProtectedRoute allowedRoles={["consumer"]}>
+  
                 <NearbyVendors />
-              </ProtectedRoute>
+          
             } />
             <Route path="/checkout" element={
-              <ProtectedRoute allowedRoles={["consumer"]}>
+             
                 <Checkout />
-              </ProtectedRoute>
+         
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>

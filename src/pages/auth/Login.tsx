@@ -86,10 +86,21 @@ const Login = () => {
     }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login/${userType}`, {
+      // Determine API URL based on environment
+      let apiUrl = API_BASE_URL;
+      
+      // For production, use the deployed backend URL
+      if (window.location.hostname !== 'localhost') {
+        apiUrl = 'https://annadata-backend.vercel.app/api';
+        console.log("Using production API URL:", apiUrl);
+      }
+      
+      const response = await fetch(`${apiUrl}/auth/login/${userType}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': window.location.origin
         },
         body: JSON.stringify({
           email: loginMethod === "email" ? formData.email : undefined,
