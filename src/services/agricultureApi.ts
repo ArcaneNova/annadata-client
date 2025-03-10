@@ -10,7 +10,7 @@ import {
 } from "@/types/agriculture-api";
 
 // Base URL for the API - in production, this should come from environment variables
-const API_BASE_URL = "https://api.annadata.example.com";
+const API_BASE_URL = "https://annadata-backend.vercel.app/api";
 
 // Helper function to handle API responses
 const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {

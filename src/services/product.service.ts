@@ -23,7 +23,7 @@ class ProductService {
   private getHeaders() {
     const token = localStorage.getItem('token');
     return {
-      'Authorization': `Bearer ${token}`,
+      'Authorization': `Bearer ${token}`
     };
   }
 
