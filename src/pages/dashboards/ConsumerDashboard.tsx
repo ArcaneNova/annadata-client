@@ -31,10 +31,76 @@ const ConsumerDashboard = () => {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to fetch orders";
       setError(message);
+      // Fallback data
+      const fallbackOrders = [
+        {
+          _id: "1",
+          orderNumber: "ORD001",
+          buyer: "user123",
+          seller: "vendor123",
+          items: [
+            {
+              product: {
+                _id: "p1",
+                name: "Organic Tomatoes",
+                price: 40
+              },
+              quantity: 5,
+              price: 40,
+              unit: "kg"
+            }
+          ],
+          totalAmount: 200,
+          status: "delivered",
+          paymentStatus: "completed",
+          paymentMethod: "razorpay",
+          deliveryAddress: {
+            street: "123 Main St",
+            city: "Mumbai",
+            state: "Maharashtra",
+            pincode: "400001"
+          },
+          orderType: "vendor-to-consumer",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          _id: "2",
+          orderNumber: "ORD002",
+          buyer: "user123",
+          seller: "vendor456",
+          items: [
+            {
+              product: {
+                _id: "p2",
+                name: "Premium Rice",
+                price: 80
+              },
+              quantity: 10,
+              price: 80,
+              unit: "kg"
+            }
+          ],
+          totalAmount: 800,
+          status: "in-transit",
+          paymentStatus: "completed",
+          paymentMethod: "razorpay",
+          deliveryAddress: {
+            street: "456 Park Ave",
+            city: "Delhi",
+            state: "Delhi",
+            pincode: "110001"
+          },
+          orderType: "vendor-to-consumer",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      setOrders(fallbackOrders);
       toast({
-        title: "Error",
-        description: message,
-        variant: "destructive",
+        title: "Notice",
+        description: "Using sample data - Could not fetch live orders",
+        variant: "default",
       });
     } finally {
       setLoading(false);

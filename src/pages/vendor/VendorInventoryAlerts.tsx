@@ -77,8 +77,46 @@ const VendorInventoryAlerts = () => {
     try {
       setLoading(true);
       const response = await api.get('/products/vendor/own');
+      if (!response.data || response.data.length === 0) {
+        // Fallback data
+        const fallbackProducts = [
+          {
+            _id: "1",
+            name: "Organic Fertilizer",
+            description: "High-quality organic fertilizer",
+            category: "fertilizers",
+            price: 500,
+            stock: 5,
+            unit: "kg",
+            images: [{ url: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d", public_id: "img1" }],
+            averageRating: 4.7,
+            totalRatings: 35,
+            seller: "vendor123"
+          },
+          {
+            _id: "2",
+            name: "Pesticide Spray",
+            description: "Eco-friendly pest control solution",
+            category: "pesticides",
+            price: 300,
+            stock: 3,
+            unit: "L",
+            images: [{ url: "https://images.unsplash.com/photo-1587049633312-d628ae50a8ae", public_id: "img2" }],
+            averageRating: 4.5,
+            totalRatings: 28,
+            seller: "vendor123"
+          }
+        ];
+        setProducts(fallbackProducts);
+        toast({
+          title: "Notice",
+          description: "Using sample product data",
+          variant: "default",
+        });
+        return;
+      }
       setProducts(response.data);
-
+  
       // Filter low stock products
       const lowStock = response.data.filter((product: Product) => 
         product.stock < alertSettings.threshold
@@ -86,10 +124,40 @@ const VendorInventoryAlerts = () => {
       setLowStockProducts(lowStock);
     } catch (error) {
       console.error('Error fetching products:', error);
+      // Use same fallback data in catch block
+      const fallbackProducts = [
+        {
+          _id: "1",
+          name: "Organic Fertilizer",
+          description: "High-quality organic fertilizer",
+          category: "fertilizers",
+          price: 500,
+          stock: 5,
+          unit: "kg",
+          images: [{ url: "https://images.unsplash.com/photo-1585314062340-f1a5a7c9328d", public_id: "img1" }],
+          averageRating: 4.7,
+          totalRatings: 35,
+          seller: "vendor123"
+        },
+        {
+          _id: "2",
+          name: "Pesticide Spray",
+          description: "Eco-friendly pest control solution",
+          category: "pesticides",
+          price: 300,
+          stock: 3,
+          unit: "L",
+          images: [{ url: "https://images.unsplash.com/photo-1587049633312-d628ae50a8ae", public_id: "img2" }],
+          averageRating: 4.5,
+          totalRatings: 28,
+          seller: "vendor123"
+        }
+      ];
+      setProducts(fallbackProducts);
       toast({
-        title: 'Error',
-        description: 'Failed to fetch products. Please try again.',
-        variant: 'destructive',
+        title: "Notice",
+        description: "Using sample product data - Could not fetch live data",
+        variant: "default",
       });
     } finally {
       setLoading(false);
