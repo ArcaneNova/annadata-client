@@ -17,7 +17,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 // Backend API URL - try multiple possible URLs
 const getApiUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl) return envUrl;
+  if (envUrl) {
+    console.log("Using API URL from environment:", envUrl);
+    return envUrl;
+  }
   
   // Try to detect the correct URL based on the current origin
   const origin = window.location.origin;
@@ -49,13 +52,14 @@ const getApiUrl = () => {
           if (response.ok) {
             console.log(`Found working API URL: ${url}`);
             localStorage.setItem('krishiMitraApiUrl', url);
-            window.location.reload(); // Reload to use the working URL
-            return;
+            return url;
           }
         } catch (error) {
           console.log(`API URL ${url} failed:`, error);
         }
       }
+      
+      console.log("No working API URL found, using default");
     })();
     
     // Return the default URL while we're checking
@@ -66,8 +70,30 @@ const getApiUrl = () => {
   return `${origin}/api`;
 };
 
-const API_URL = getApiUrl();
-console.log("Using API URL:", API_URL);
+// Initialize API URL
+let API_URL = getApiUrl();
+console.log("Initially using API URL:", API_URL);
+
+// Function to test API connection and update URL if needed
+const testApiConnection = async () => {
+  try {
+    const response = await fetch(`${API_URL}/health`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    if (response.ok) {
+      console.log("API connection successful");
+      return true;
+    } else {
+      console.log("API connection failed with status:", response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error("API connection test failed:", error);
+    return false;
+  }
+};
 
 type Message = {
   role: "user" | "assistant";
@@ -119,6 +145,14 @@ const KrishiMitra = () => {
     try {
       console.log("Sending request to AI API...");
       
+      // Test API connection first
+      const isConnected = await testApiConnection();
+      if (!isConnected) {
+        // Try to get a new API URL
+        API_URL = getApiUrl();
+        console.log("Updated API URL to:", API_URL);
+      }
+      
       // Call backend proxy endpoint
       const response = await fetch(`${API_URL}/ai/gemini`, {
         method: 'POST',
@@ -141,6 +175,10 @@ const KrishiMitra = () => {
       
       const data = await response.json();
       console.log("Response received:", data);
+      
+      if (data.error) {
+        console.warn("API returned an error:", data.error);
+      }
       
       return data.response || "I'm sorry, I couldn't process your request at the moment. Please try again later.";
     } catch (error) {
